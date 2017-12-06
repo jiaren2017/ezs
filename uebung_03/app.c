@@ -89,10 +89,12 @@ void heapsort_job(void)
 
 void bubblesort(uint32_t array[], unsigned int N) {
 	int i, j;
+    //volatile cyg_uint32 x = 0;
 	for (i = 0; i < N - 1; ++i) {
 		for (j = 0; j < N - i - 1; ++j) {
 			if (array[j] > array[j + 1]) {
 				// Bubble up!
+                //x++;
 				swap(array, j, j+1);
 			}
 		}
@@ -133,7 +135,7 @@ void thread(cyg_addrword_t arg)
 
 	while (1)
 	{
-		cyg_thread_delay(delay);	// Wait 5ms
+		//cyg_thread_delay(delay);	// Wait 5ms
        // if (timestep >= 1e2) break;
 		// do things here...
 		// heapsort_job();
@@ -142,22 +144,24 @@ void thread(cyg_addrword_t arg)
 		
         //ezs_printf("Start\n");
         //volatile cyg_uint8 i = 0;
-        ezs_watch_start(&state);
+        //ezs_watch_start(&state);
         //for (i = 0; i < 100; i++){
         //ezs_dac_write(0);
-        //ezs_gpio_set(0);
-        //checksum_job();
-        bubblesort_job();
-        //ezs_gpio_set(1);
+        ezs_gpio_set(1);
+        checksum_job();
+        //bubblesort_job();
+        //}
+        ezs_gpio_set(0);
         //ezs_delay_us(50);
         //bubblesort(g_data, DATA_SIZE);
         //ezs_dac_write(255);
         //ezs_delay_us(50000);
-        cyg_uint64 time = ezs_watch_stop(&state);
+        //cyg_uint32 time = ezs_watch_stop(&state);
         //ezs_print_measurement(timestep, time);
-        time = time * ezs_counter_resolution_ps();
-        time = time / 1e3;
-        ezs_printf("%d\n", time);
+        //time = time * ezs_counter_resolution_ps();
+        //time = time / 1e3;
+        //ezs_printf("%d\n", time);
+        //timestep++;
     }//
         //ezs_dac_write(0);
         //cyg_uint32 time = ezs_watch_stop(&state);
