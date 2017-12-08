@@ -49,43 +49,52 @@ static cyg_handle_t counter4;
 void alarm_handler1(cyg_handle_t alarm, cyg_addrword_t data)
 {
 	// 'data' is a pointer to a thread handle! (see cyg_alarm_create below)
-	cyg_thread_resume(*((cyg_handle_t*) data));
+	cyg_thread_resume(threadhndl1);
 }
 
 void alarm_handler2(cyg_handle_t alarm, cyg_addrword_t data)
 {
 	// 'data' is a pointer to a thread handle! (see cyg_alarm_create below)
-	cyg_thread_resume(*((cyg_handle_t*) data));
+	cyg_thread_resume(threadhndl2);
 }
 
 void alarm_handler3(cyg_handle_t alarm, cyg_addrword_t data)
 {
 	// 'data' is a pointer to a thread handle! (see cyg_alarm_create below)
-	cyg_thread_resume(*((cyg_handle_t*) data));
+	cyg_thread_resume(threadhndl3);
 }
 
 void alarm_handler4(cyg_handle_t alarm, cyg_addrword_t data)
 {
 	// 'data' is a pointer to a thread handle! (see cyg_alarm_create below)
-	cyg_thread_resume(*((cyg_handle_t*) data));
+	cyg_thread_resume(threadhndl4);
 }
 
 
 //A little helper function.
 cyg_tick_count_t ms_to_cyg_ticks(cyg_uint32 ms)
 {
-	 
-	return ms;
+    cyg_uint64 newMs = ms;
+	cyg_resolution_t resolution = cyg_clock_get_resolution(cyg_real_time_clock());
+    //ezs_printf("ms: %d\n", ms);
+    //ezs_printf("dividend: %d\n", resolution.dividend);
+    //ezs_printf("divisor: %d\n", resolution.divisor);
+    newMs *= 1e6;
+    newMs = newMs * resolution.divisor;
+    newMs = newMs / resolution.dividend;
+    //ezs_printf("ICH WAR DA!! %d\n", newMs);
+	return newMs;
 }
 
 //A little helper function.
 cyg_tick_count_t ms_to_ezs_ticks(cyg_uint32 ms)
 {
 	ms *= 1e6;
-    ms = ms / ezs_counter_get_resolution().divisor;
-    ms = ms * ezs_counter_get_resolution().dividend;
+    ms = ms / ezs_counter_get_resolution().dividend;
+    ms = ms * ezs_counter_get_resolution().divisor;
 	return ms;
-}static cyg_handle_t counter;
+}
+static cyg_handle_t counter;
 /*volatile int x = CYG_FB_WIDTH(FRAMEBUF);
 
 // A little test thread.
@@ -134,30 +143,35 @@ my_stack
 }*/
 
 void abtastung1(cyg_addrword_t arg){
+    
     while(1){
+        //ezs_printf("abtastung1\n");
         ezs_lose_time(ms_to_ezs_ticks(2), 100);
-        cyg_thread_suspend(threadhndl1);
+        cyg_thread_suspend(cyg_thread_self());
     }
 }
 
 void abtastung2(cyg_addrword_t arg){
     while(1){
+        //ezs_printf("abtastung2\n");
         ezs_lose_time(ms_to_ezs_ticks(2), 100);
-        cyg_thread_suspend(threadhndl2);
+        cyg_thread_suspend(cyg_thread_self());
     }
 }
 
 void analyse(cyg_addrword_t arg){
     while(1){
+        //ezs_printf("analyse\n");
         ezs_lose_time(ms_to_ezs_ticks(3), 100);
-        cyg_thread_suspend(threadhndl3);
+        cyg_thread_suspend(cyg_thread_self());
     }
 }
 
 void darstellung(cyg_addrword_t arg){
     while(1){
-        ezs_lose_time(ms_to_ezs_ticks(4), 100);
-        cyg_thread_suspend(threadhndl4);
+        //ezs_printf("darstellung\n");
+        ezs_lose_time(ms_to_ezs_ticks(6), 100);
+        cyg_thread_suspend(cyg_thread_self());
     }
 }
 
@@ -178,6 +192,7 @@ void cyg_user_start(void)
 	// Create test thread
 	cyg_thread_create(1, &abtastung1, 0, "Abtastung1", my_stack1, STACKSIZE,
 	                  &threadhndl1, &threaddata1);
+    //cyg_thread_resume(threadhndl1);
     
     cyg_thread_create(2, &abtastung2, 0, "Abtastung2", my_stack2, STACKSIZE,
 	                  &threadhndl2, &threaddata2);
@@ -196,20 +211,20 @@ void cyg_user_start(void)
         */
 
 	// Create alarm. Notice the pointer to the threadhndl1 as alarm function parameter!
-	cyg_alarm_create(counter1, alarm_handler1, (cyg_addrword_t) &threadhndl1 , &alarmhnd1, &alarm1);
+	cyg_alarm_create(counter, alarm_handler1, (cyg_addrword_t) &threadhndl1 , &alarmhnd1, &alarm1);
 	cyg_alarm_initialize(alarmhnd1, cyg_current_time() + 1, ms_to_cyg_ticks(10));
 	cyg_alarm_enable(alarmhnd1);
     
-    cyg_alarm_create(counter2, alarm_handler2, (cyg_addrword_t) &threadhndl2 , &alarmhnd2, &alarm2);
-	cyg_alarm_initialize(alarmhnd2, cyg_current_time() + 1, ms_to_cyg_ticks(20));
+    cyg_alarm_create(counter, alarm_handler2, (cyg_addrword_t) &threadhndl2 , &alarmhnd2, &alarm2);
+	cyg_alarm_initialize(alarmhnd2, cyg_current_time() + 1 + ms_to_cyg_ticks(2), ms_to_cyg_ticks(20));
 	cyg_alarm_enable(alarmhnd2);
     
-    cyg_alarm_create(counter3, alarm_handler3, (cyg_addrword_t) &threadhndl3 , &alarmhnd3, &alarm3);
-	cyg_alarm_initialize(alarmhnd3, cyg_current_time() + 1, ms_to_cyg_ticks(20));
+    cyg_alarm_create(counter, alarm_handler3, (cyg_addrword_t) &threadhndl3 , &alarmhnd3, &alarm3);
+	cyg_alarm_initialize(alarmhnd3, cyg_current_time() + 1 + ms_to_cyg_ticks(4), ms_to_cyg_ticks(20));
 	cyg_alarm_enable(alarmhnd3);
     
-    cyg_alarm_create(counter4, alarm_handler4, (cyg_addrword_t) &threadhndl4 , &alarmhnd4, &alarm4);
-	cyg_alarm_initialize(alarmhnd4, cyg_current_time() + 1, ms_to_cyg_ticks(100));
+    cyg_alarm_create(counter, alarm_handler4, (cyg_addrword_t) &threadhndl4 , &alarmhnd4, &alarm4);
+	cyg_alarm_initialize(alarmhnd4, cyg_current_time() + 1 + ms_to_cyg_ticks(12), ms_to_cyg_ticks(100));
 	cyg_alarm_enable(alarmhnd4);
 
 }

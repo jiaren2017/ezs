@@ -2,3 +2,11 @@ Prioritaeten:   T1: 1
                 T2: 2
                 T3: 3
                 T4: 4
+
+1:  Periode wird nicht eingehalten (Threads werden zu frueh gestartet)
+    Signal2 wird verfaelscht, da nicht zu den angenommenen Zeitpunkten abgetastet wird.
+    
+2:  Alarmstarts geschoben damit sich Threads nicht unterbrechen, Alarm von                          
+    Thread mit niedrigerer Prioritaet nach WCET vom Thread mit naechsthoehrer Prioritaet gestartet. Vorwissen: WCET und Periode.
+    Perioden werden jetzt viel genauer eingehalten.
+    
