@@ -77,8 +77,8 @@ cyg_tick_count_t ms_to_cyg_ticks(cyg_uint32 ms)
     cyg_uint64 newMs = ms;
 	cyg_resolution_t resolution = cyg_clock_get_resolution(cyg_real_time_clock());
     //ezs_printf("ms: %d\n", ms);
-    //ezs_printf("dividend: %d\n", resolution.dividend);
-    //ezs_printf("divisor: %d\n", resolution.divisor);
+    ezs_printf("dividend: %d\n", resolution.dividend);
+    ezs_printf("divisor: %d\n", resolution.divisor);
     newMs *= 1e6;
     newMs = newMs * resolution.divisor;
     newMs = newMs / resolution.dividend;

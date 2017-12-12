@@ -10,3 +10,8 @@ Prioritaeten:   T1: 1
     Thread mit niedrigerer Prioritaet nach WCET vom Thread mit naechsthoehrer Prioritaet gestartet. Vorwissen: WCET und Periode.
     Perioden werden jetzt viel genauer eingehalten.
     
+3:  Perioden werden nicht eingehalten
+
+4:  Nachteile:  Interrupts kommen und verzoegern Perioden
+    Vorteile:   Deterministisch
+    
