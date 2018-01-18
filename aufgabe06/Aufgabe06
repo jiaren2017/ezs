@@ -1,0 +1,73 @@
+Aufgabe 2:
+
+WOET:
+	T3:  440256 -->  10.48 ms // interrupts deaktivieren
+	T4: 4341952 --> 103.34 ms
+	T5: 2889772 -->  68.78 ms
+
+RMA: Tasks muessen in Phase und harmonisch sein --> Sind zwar in Phase aber T2 - T5 sind nicht Vielfache von T1 (nicht harmonisch)
+
+EDF: Summe_i(e_i/p_i) = 0.718 < 1 und damit zulaessiger Ablaufplan moeglich
+
+
+Aufgabe 4 :
+
+Strings werden als Char-Arrays repraesentiert
+Laenge des Strings + \0
+
+
+Aufgabe 5:
+
+Wir kennen die Laenge unserer Befehle, Befehle im Arry werden nur an benoetigten Stellen ueberschrieben --> da Befehle unterschiedlich lang werden nicht immer alle Zeichen ueberschrieben, demnach ist das Vergleichen des ganzen Strings nicht sinnvoll
+
+signal : 15, pds: 12 (s. Aufgabe 4)
+
+WOET:
+	T6: 322 --> 7.66 us
+
+
+Aufgabe 6:
+
+i_6 = 8.68 us
+Wegen der baud rate der Seriellen Schnittstelle
+
+
+Aufgabe 7:
+
+i_7 = 12 * 8.68 us = 104 us
+
+
+Augabe 8:
+
+mit einem char delay in T7
+
+
+Aufgabe 9:
+
+Antwortzeiten (gemessen):
+
+	Unterbrecherbetrieb:     18 --> 428.00 ns
+	Hintergrundbetrieb:     272 -->   6.47 us  (Vom Ablaufplan abhaengig)
+	Periodischer Zusteller:     	  24 ms
+	(p_s = 24 (char delay = 2 --> max 12 char * char delay))
+
+
+
+Aufgabe 10:
+
+Man ueberschreibt das Array bevor man es auswerten kann
+--> Loesung: Kopieren der Werte
+
+
+Aufgabe 12:
+
+Wir benutzen eCos-Event-Flags
+Betriebszustaende: 1. Darstellung des Zeitsignals 2. Darstellung der Fouriertransformation
+1. Wenn wir das Zeitsignal darstellen, benoetigen wir die periodischen Tasks T3 und T5 nicht mehr und umgekehrt T4 nicht mehr
+
+
+Aufgabe 14:
+
+Vorteile eines Betriebswechseln liegen darin, dass man nicht immer alle periodischen Tasks benoetigt und so die nicht benoetigten deaktiviert werden koennen. Damit werden Ressourcen und Rechenzeit gespart, der Ablaufpaln wird uebersichtlicher.
+Herausforderung liegen in der Implementierung und der Abdeckung aller moeglicher Faelle in Statemachine.
+// Beide Modi koennen bis 100 prozent ausgelastet werden, da man hier im Enddefekt 2 voneinander unabhaengige Ablaufplaene hat
