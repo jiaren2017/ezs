@@ -37,7 +37,7 @@
 #define DISPLAY_SIGNAL_TASK_PERIOD 250
 #define DISPLAY_PDS_TASK_PERIOD 1000
 #define ANALYSIS_TASK_PERIOD 1000
-#define POLLING_TASK_PERIOD 30
+#define POLLING_TASK_PERIOD 30      //24 
 
 #define PROCRASTINATION_WCET 1
 
@@ -65,7 +65,7 @@ static bool s_command_decodable = false;
 
 static cyg_uint32 status;   //used in stopwatch
 
-static char read;           //used for DSR
+static volatile char read;           //used for DSR
 
 enum CommandStatus
 {
@@ -80,7 +80,7 @@ static enum CommandStatus packet_receive(char c)
     if (c == '\n'){
         s_serial_buffer[s_serial_position] = '\0';
         s_serial_position = 0;
-        return CommandComplete;
+        return CommandComplete;                                                            // falls laenge <12 trotzdem CommandIncomplete
     } else {
         s_serial_position = (s_serial_position + 1) % SERIAL_BUFFER_LENGTH;
         return CommandIncomplete;
@@ -143,7 +143,7 @@ enum Command decode_command(void)
 {
 
 	enum Command ret = Invalid;
-	if (!strncmp("display signal\0", s_serial_buffer, 15)){
+	if (!strncmp("display signal\0", s_serial_buffer, 15)){  // \0 nicht noetig
         ret = DisplayTime;
     }
     else if (!strncmp("display pds\0", s_serial_buffer, 12)){
@@ -175,6 +175,7 @@ static cyg_uint8 received = 0;
 void serial_dsr_handler(cyg_vector_t vec, cyg_ucount32 count, cyg_addrword_t data)
 {   
     //ezs_printf("%c", read);
+    //diag_printf("DSR\n");
 	if(packet_receive(read) == CommandComplete){        //hintergrundbetrieb
         //ezs_watch_start(&status);
         //decode_command();                             //unterbrecherbetrieb
@@ -203,10 +204,12 @@ static void hinter_task_entry(cyg_addrword_t data)
         //cyg_uint32 time = ezs_watch_stop(&status);
         //ezs_printf("%d\n", time);
         received = 0;
+        
         if (modus == DisplayTime || modus == DisplayPDS){
+            ezs_printf("Setbits\n");
             cyg_flag_setbits(&flag, modus);
         }
-        cyg_thread_resume(statemachine_task_handle);
+        //cyg_thread_resume(statemachine_task_handle);  //passiert schon bei setbits
 		cyg_thread_suspend(cyg_thread_self());
         
         
@@ -280,7 +283,7 @@ static void statemachine_task_entry(cyg_addrword_t data)
                 alarm5 = true;
             }
         }
-      cyg_thread_suspend(cyg_thread_self());  
+      //cyg_thread_suspend(cyg_thread_self());  
         
 	}
 }
@@ -297,7 +300,7 @@ static void sampling_task_entry(cyg_addrword_t data)
         cyg_uint8 wert = ezs_adc_read();
         s_time_domain[s_position] = wert;
         s_position += 1;
-        s_position = s_position%64;
+        s_position = s_position%TIME_DOMAIN_LENGTH;
 
 		cyg_thread_suspend(cyg_thread_self());
 	}
@@ -375,7 +378,7 @@ static void display_signal_task_entry(cyg_addrword_t data)
             new_time_domain[i] = s_time_domain[actualPosition];
             actualPosition = (actualPosition + 1) % TIME_DOMAIN_LENGTH;
         }
-        ezs_plot(new_time_domain, TIME_DOMAIN_LENGTH, FB_WHITE, FB_BLACK);
+        ezs_plot(new_time_domain, TIME_DOMAIN_LENGTH, CYG_FB_DEFAULT_PALETTE_BLACK, CYG_FB_DEFAULT_PALETTE_BLACK);
             //packet_receive('\0');
             //cyg_uint32 time = ezs_watch_stop(&status);
             //ezs_printf("%d\n", time);
@@ -404,7 +407,7 @@ static void display_pds_task_entry(cyg_addrword_t data)
         //max = 0;
         //while(counter < 1000){
             //ezs_watch_start(&status);
-            ezs_plot_pds(s_frequency_domain, PDS_LENGTH, FB_WHITE, FB_BLACK);  
+            ezs_plot_pds(s_frequency_domain, PDS_LENGTH, CYG_FB_DEFAULT_PALETTE_WHITE, CYG_FB_DEFAULT_PALETTE_BLACK);  //koennte von analyse unterbrochen werden
             //cyg_uint32 time = ezs_watch_stop(&status);
             //ezs_printf("%d\n", time);
             //if (time > max){
@@ -536,6 +539,8 @@ void cyg_user_start(void)
     alarm3 = true;
     alarm4 = true;
     alarm5 = true;
+    
+    cyg_thread_resume(statemachine_task_handle);
     
     //cyg_alarm_create(real_time_counter, polling_task_alarmfn, data_dummy, &polling_task_alarm_handle, &polling_task_alarm);
 	//cyg_alarm_initialize(polling_task_alarm_handle, timebase + ms_to_cyg_ticks(POLLING_TASK_PHASE), ms_to_cyg_ticks(POLLING_TASK_PERIOD));
