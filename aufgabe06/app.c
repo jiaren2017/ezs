@@ -109,8 +109,8 @@ enum Command
 
 enum State
 {
-	Time,
-	PDS
+	Time = (1 << 1),
+	PDS = (1 << 2),
 };
 static enum State actual;        //used in t8
 
@@ -178,26 +178,35 @@ void serial_dsr_handler(cyg_vector_t vec, cyg_ucount32 count, cyg_addrword_t dat
 	if(packet_receive(read) == CommandComplete){        //hintergrundbetrieb
         //ezs_watch_start(&status);
         //decode_command();                             //unterbrecherbetrieb
-        //cyg_thread_resume(hinter_task_handle);        //hintergrundbetrieb
         received = 1;
+        cyg_thread_resume(hinter_task_handle);        //hintergrundbetrieb
+        
     }
         
 }
 
+static cyg_flag_t flag;
 
 // hintergrundbetrieb
 // T7
 static cyg_uint8     hinter_task_stack[STACKSIZE];
 
 static cyg_thread    hinter_task_thread;
+static cyg_handle_t statemachine_task_handle;
+
 static void hinter_task_entry(cyg_addrword_t data)
 {
 	while (1)
 	{
-		decode_command();
+		enum Command modus = decode_command();
         //ezs_printf(s_serial_buffer);
         //cyg_uint32 time = ezs_watch_stop(&status);
         //ezs_printf("%d\n", time);
+        received = 0;
+        if (modus == DisplayTime || modus == DisplayPDS){
+            cyg_flag_setbits(&flag, modus);
+        }
+        cyg_thread_resume(statemachine_task_handle);
 		cyg_thread_suspend(cyg_thread_self());
         
         
@@ -231,13 +240,48 @@ static void polling_task_entry(cyg_addrword_t data)
 static cyg_uint8     statemachine_task_stack[STACKSIZE];
 static cyg_handle_t  statemachine_task_handle;
 static cyg_thread    statemachine_task_thread;
+
+
+static bool alarm3 = false;
+static bool alarm4 = false;
+static bool alarm5 = false;
+static cyg_handle_t analysis_task_alarm_handle;
+static cyg_handle_t display_signal_task_alarm_handle;
+static cyg_handle_t display_pds_task_alarm_handle;
+
 static void statemachine_task_entry(cyg_addrword_t data)
 {
 	while (1)
 	{
-		/*
-		 * TODO: Code ergaenzen
-		 */
+        ezs_printf("T8\n");
+		actual = cyg_flag_wait(&flag, (Time | PDS), CYG_FLAG_WAITMODE_OR | CYG_FLAG_WAITMODE_CLR);
+        ezs_printf("T8 aktiviert\n");
+        if (actual == Time){
+            ezs_printf("Time aktiviert\n");
+            cyg_alarm_disable(analysis_task_alarm_handle);
+            alarm3 = false;
+            cyg_alarm_disable(display_pds_task_alarm_handle);
+            alarm5 = false;
+            if (!alarm4){
+                cyg_alarm_enable(display_signal_task_alarm_handle);
+                alarm4 = true;
+            }
+        }
+        if (actual == PDS){
+            ezs_printf("PDS aktiviert\n");
+            cyg_alarm_disable(display_signal_task_alarm_handle);
+            alarm4 = false;
+            if (!alarm3){
+                cyg_alarm_enable(analysis_task_alarm_handle);
+                alarm3 = true;
+            }
+            if (!alarm5){
+                cyg_alarm_enable(display_pds_task_alarm_handle);
+                alarm5 = true;
+            }
+        }
+      cyg_thread_suspend(cyg_thread_self());  
+        
 	}
 }
 
@@ -279,6 +323,7 @@ static cyg_handle_t  analysis_task_handle;
 static cyg_thread    analysis_task_thread;
 static cyg_uint32 counter = 0;
 static cyg_uint32 max = 0;
+static cyg_uint32 new_time_domain[TIME_DOMAIN_LENGTH];
 
 static void analysis_task_entry(cyg_addrword_t data)
 {
@@ -289,7 +334,14 @@ static void analysis_task_entry(cyg_addrword_t data)
         //max = 0;
         //while(counter < 10000){
             //ezs_watch_start(&status);
-            ezs_easy_pds(s_time_domain, s_frequency_domain, TIME_DOMAIN_LENGTH);
+        cyg_uint8 actualPosition = s_position;
+        cyg_uint32 i = 0;
+        for (i = 0; i < TIME_DOMAIN_LENGTH; i++){
+            new_time_domain[i] = s_time_domain[actualPosition];
+            actualPosition = (actualPosition + 1) % TIME_DOMAIN_LENGTH;
+        }
+            
+            ezs_easy_pds(new_time_domain, s_frequency_domain, TIME_DOMAIN_LENGTH);
             //cyg_uint32 time = ezs_watch_stop(&status);
             //ezs_printf("%d\n", time);display_pds
            // if (time > max){
@@ -316,7 +368,14 @@ static void display_signal_task_entry(cyg_addrword_t data)
         //max = 0;
         //while(counter < 10000){
             //ezs_watch_start(&status);
-            ezs_plot(s_time_domain, TIME_DOMAIN_LENGTH, FB_WHITE, FB_BLACK);
+        ezs_printf("T4\n");
+        cyg_uint8 actualPosition = s_position;
+        cyg_uint32 i = 0;
+        for (i = 0; i < TIME_DOMAIN_LENGTH; i++){
+            new_time_domain[i] = s_time_domain[actualPosition];
+            actualPosition = (actualPosition + 1) % TIME_DOMAIN_LENGTH;
+        }
+        ezs_plot(new_time_domain, TIME_DOMAIN_LENGTH, FB_WHITE, FB_BLACK);
             //packet_receive('\0');
             //cyg_uint32 time = ezs_watch_stop(&status);
             //ezs_printf("%d\n", time);
@@ -345,7 +404,7 @@ static void display_pds_task_entry(cyg_addrword_t data)
         //max = 0;
         //while(counter < 1000){
             //ezs_watch_start(&status);
-            ezs_plot_pds(s_frequency_domain, PDS_LENGTH, FB_WHITE, FB_BLACK);   // hier immer stecken geblieben (assert hat gefailed)
+            ezs_plot_pds(s_frequency_domain, PDS_LENGTH, FB_WHITE, FB_BLACK);  
             //cyg_uint32 time = ezs_watch_stop(&status);
             //ezs_printf("%d\n", time);
             //if (time > max){
@@ -393,9 +452,7 @@ static void polling_task_alarmfn(cyg_handle_t alarmH, cyg_addrword_t data)
 
 static cyg_handle_t sampling_task_alarm_handle;
 static cyg_handle_t procrastination_task_alarm_handle;
-static cyg_handle_t analysis_task_alarm_handle;
-static cyg_handle_t display_signal_task_alarm_handle;
-static cyg_handle_t display_pds_task_alarm_handle;
+
 static cyg_handle_t polling_task_alarm_handle;
 
 static cyg_alarm sampling_task_alarm;
@@ -429,6 +486,7 @@ void cyg_user_start(void)
 			&serial_intr) ;
 	cyg_interrupt_attach(serial_isr_handle);
 	cyg_interrupt_unmask(SERIAL_IRQ);
+    cyg_flag_init(&flag);
 
 
 	cyg_thread_create(SAMPLING_TASK_PRIORITY, &sampling_task_entry, 0, "sampling task",
@@ -455,6 +513,10 @@ void cyg_user_start(void)
 			polling_task_stack, STACKSIZE,
 			&polling_task_handle, &polling_task_thread);
     
+    cyg_thread_create(STATEMACHINE_TASK_PRIORITY, &statemachine_task_entry, 0, "statemachine",
+            statemachine_task_stack, STACKSIZE,
+            &statemachine_task_handle, &statemachine_task_thread);
+    
     
     ezs_printf("Threads created\n");
 	cyg_clock_to_counter(cyg_real_time_clock(), &real_time_counter);
@@ -471,7 +533,10 @@ void cyg_user_start(void)
 	cyg_alarm_initialize(display_signal_task_alarm_handle, timebase + ms_to_cyg_ticks(DISPLAY_SIGNAL_TASK_PHASE), ms_to_cyg_ticks(DISPLAY_SIGNAL_TASK_PERIOD));
 	cyg_alarm_create(real_time_counter, display_pds_task_alarmfn, data_dummy, &display_pds_task_alarm_handle, &display_pds_task_alarm);
 	cyg_alarm_initialize(display_pds_task_alarm_handle, timebase + ms_to_cyg_ticks(DISPLAY_PDS_TASK_PHASE), ms_to_cyg_ticks(DISPLAY_PDS_TASK_PERIOD));
+    alarm3 = true;
+    alarm4 = true;
+    alarm5 = true;
     
-    cyg_alarm_create(real_time_counter, polling_task_alarmfn, data_dummy, &polling_task_alarm_handle, &polling_task_alarm);
-	cyg_alarm_initialize(polling_task_alarm_handle, timebase + ms_to_cyg_ticks(POLLING_TASK_PHASE), ms_to_cyg_ticks(POLLING_TASK_PERIOD));
+    //cyg_alarm_create(real_time_counter, polling_task_alarmfn, data_dummy, &polling_task_alarm_handle, &polling_task_alarm);
+	//cyg_alarm_initialize(polling_task_alarm_handle, timebase + ms_to_cyg_ticks(POLLING_TASK_PHASE), ms_to_cyg_ticks(POLLING_TASK_PERIOD));
 }
