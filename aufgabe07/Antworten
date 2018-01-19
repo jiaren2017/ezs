@@ -5,3 +5,10 @@
 3:  Threads mit hoehrer Prioritaet koennen nicht gestartet werden, da dafuer notwendige Betriebsmittel von Thread mit niedrigerer Prioritaet belegt sind.
 
 4:  Prioritaetsumkehr: Unbeteiligter Thread mit niedrigerer Prioritaet kann vorgelassen werden, da keine Betriebsmittel benoetigt -> Thread mit hoehrer Prioritaet kann Deadline verletzen.
+
+6:  Blockadezeit fuer T1: 5
+
+7:  Nein, weil nur ein Betriebsmittel vorhanden.
+
+8:  Unbeteiligter Task wird blockiert, obwohl er das Betriebsmittel nicht benoetigt (Scheduler wird im kritischen Abschnitt ausgeschaltet).
+
