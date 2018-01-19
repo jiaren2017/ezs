@@ -22,6 +22,8 @@
 #define LOW_TASK_PRIORITY    12
 
 
+static cyg_uint32 time;
+static cyg_uint32 ticks; 
 
 static cyg_uint8     high_task_stack[STACKSIZE];
 static cyg_thread    high_task_thread;
@@ -42,6 +44,7 @@ static void low_task_entry(cyg_addrword_t data);
 
 static void high_task_alarmfn(cyg_handle_t alarmH, cyg_addrword_t data)
 {
+        ezs_stopwatch_start(&time);
 		cyg_thread_resume(high_task_handle);
 }
 
@@ -67,7 +70,9 @@ static void high_task_lock(cyg_handle_t alarmH, cyg_addrword_t data)
 
 static void low_task_unlock(cyg_handle_t alarmH, cyg_addrword_t data)
 {
-	cyg_scheduler_unlock();	
+	ticks = ezs_stopwatch_stop(&time);
+    cyg_scheduler_unlock();
+    
 }
 
 static void high_task_unlock(cyg_handle_t alarmH, cyg_addrword_t data)
@@ -124,6 +129,7 @@ static void high_task_entry(cyg_addrword_t data)
         cyg_alarm_initialize(s_high_lock_alarm_handle, 3, 0);
         cyg_alarm_initialize(s_high_unlock_alarm_handle, 4, 0);
         lose_time_us(6000, 100);
+        ezs_printf(ticks);
 		cyg_thread_suspend(cyg_thread_self());
 
 	}
