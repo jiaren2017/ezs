@@ -1,0 +1,7 @@
+1:  Mehrere Threads mit gemeinsame Ressourcen warten auf Freigabe von Betriebsmitteln, die von anderen beteiligten Threads blockiert werden. Bsp: t1 benutzt r1 und braucht r2, t2 benutzt r2 und braucht r1.
+
+2:  Bei gemeinsamer Nutzung von Betriebsmitteln muss beachtet werden, wie lange diese von einem Thread blockiert sein koennten.
+
+3:  Threads mit hoehrer Prioritaet koennen nicht gestartet werden, da dafuer notwendige Betriebsmittel von Thread mit niedrigerer Prioritaet belegt sind.
+
+4:  Prioritaetsumkehr: Unbeteiligter Thread mit niedrigerer Prioritaet kann vorgelassen werden, da keine Betriebsmittel benoetigt -> Thread mit hoehrer Prioritaet kann Deadline verletzen.
