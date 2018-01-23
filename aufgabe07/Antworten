@@ -12,10 +12,12 @@
 
 8:  Unbeteiligter Task wird blockiert, obwohl er das Betriebsmittel nicht benoetigt (Scheduler wird im kritischen Abschnitt ausgeschaltet).
 
-9:  T3 laeuft 8ms, T1 muesste aber 3ms nachdem T3 gestartet starten --> Blockadezeit = 5ms
+9:  T3 laeuft 8,03ms, T1 muesste aber 3ms nachdem T3 gestartet starten --> Blockadezeit = 5,03ms
 
 11: Blockadezeit fuer T4: 18
 
 12: Ja
 
 13: Unbeteiligte Threads werden entsprechend ihrer Prioritaet ggf. vorgelassen
+
+14:  Blockadezeit = 16,28ms
