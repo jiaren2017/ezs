@@ -8,7 +8,14 @@
 
 6:  Blockadezeit fuer T1: 5
 
-7:  Nein, weil nur ein Betriebsmittel vorhanden.
+7:  Nein, weil nur ein Betriebsmittel vorhanden. Hier aber trotzdem nicht, da andere Thread nicht eingelastet werden, falls eine Resource belgt ist.
 
 8:  Unbeteiligter Task wird blockiert, obwohl er das Betriebsmittel nicht benoetigt (Scheduler wird im kritischen Abschnitt ausgeschaltet).
 
+9:  T3 laeuft 8ms, T1 muesste aber 3ms nachdem T3 gestartet starten --> Blockadezeit = 5ms
+
+11: Blockadezeit fuer T4: 18
+
+12: Ja
+
+13: Unbeteiligte Threads werden entsprechend ihrer Prioritaet ggf. vorgelassen
