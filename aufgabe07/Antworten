@@ -18,6 +18,22 @@
 
 12: Ja
 
-13: Unbeteiligte Threads werden entsprechend ihrer Prioritaet ggf. vorgelassen
+13: Unbeteiligte Threads werden entsprechend ihrer Prioritaet ggf. vorgelassen.
 
-14:  Blockadezeit = 16,28ms
+14: Blockadezeit = 16,28ms
+
+16: Blockadezeit fuer T8 = 4 (Zeit zwischen Zeitpunkt wo Resource von T8 benoetigt wird und Zeitpunkt wo Task mit blockierter Resource(n) alle Resourcen wieder frei gibt.
+
+17: Nein (siehe Folie 32, Foliensatz 07). Ein Task kann nur eine Resource belegen, falls alle von ihm benoetigte Resourcen frei sind, ansosten blockiert er.
+
+18: Unbeteiligter Task wird von Tasks mit niedrigerer Prioritaet verdraengt, falls Prioritaetsvererbung.
+
+19: Ausfuehrungszeit(T10) - Phasenunterschied(T10/T8) = 4,08ms
+
+20: eCos implementiert die Stapeloriente Variante, die die Prioritaet gleich bei Vergabe/Freigabe von Betriebsmitteln aktualisiert und nicht erst wenn diese von einem anderen Task gebraucht werden.
+
+21: NCPS mit veraenderlichen Prioritaetn. Ohne Betriebsmittelzuteilung werden Auftraege nict eingelastet -> Autraege blockieren niemals nach Ausfuehrungsbeginn.
+
+22: Tasks starten nicht, solange alle benoetigte Betriebsmittel nicht frei sind.
+
+
